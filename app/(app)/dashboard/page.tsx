@@ -59,9 +59,16 @@ export default async function Dashboard() {
   const isOverLimit = smsUsed > SMS_INCLUDED
 
   // Period
+  // Billing day = day of month they signed up
+  const billingDay = new Date(biz.created_at).getDate()
   const periodStart = biz.sms_period_start
     ? new Date(biz.sms_period_start).toLocaleDateString('nb-NO', { day: 'numeric', month: 'long' })
     : null
+  // Next billing date
+  const todayDay = now.getDate()
+  const nextBillingMonth = todayDay >= billingDay ? now.getMonth() + 1 : now.getMonth()
+  const nextBilling = new Date(now.getFullYear(), nextBillingMonth, billingDay)
+    .toLocaleDateString('nb-NO', { day: 'numeric', month: 'long' })
 
   return (
     <div className="p-5 md:p-7 max-w-5xl">
@@ -191,7 +198,7 @@ export default async function Dashboard() {
             ) : (
               <p className="text-xs text-gray-400">Inkluderer 100 SMS/mnd · 0,40 kr/SMS deretter</p>
             )}
-            {periodStart && <p className="text-xs text-gray-300 mt-2">Periode startet {periodStart}</p>}
+            {<p className="text-xs text-gray-300 mt-2">Nullstilles {nextBilling} (faktureringsdato)</p>}
           </div>
 
           {/* Recent feedback */}
