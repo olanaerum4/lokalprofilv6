@@ -62,8 +62,8 @@ export async function POST(req: Request) {
     if (!existing) {
       await sb.from('feedback').insert({ customer_id: customer.id, business_id: biz.id, rating })
       const msg = rating >= 4
-        ? (biz.google_review_link ? sms.positive(biz.google_review_link) : `Så glad du er fornøyd! 🌟 Takk for at du valgte ${biz.name}!`)
-        : sms.negative()
+        ? (biz.google_review_link ? `Takk for tilbakemeldingen! 🌟 Legg gjerne igjen en anmeldelse: ${biz.google_review_link}` : `Så glad du er fornøyd! 🌟 Takk for at du valgte ${biz.name}!`)
+        : `Takk for tilbakemeldingen! Vi tar det med oss og jobber for å bli bedre.`
       await sendSMS(from, msg)
       await sb.from('messages').insert({ business_id: biz.id, customer_id: customer.id, direction: 'out', body: msg })
     }
