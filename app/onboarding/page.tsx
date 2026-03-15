@@ -15,6 +15,7 @@ export default function Onboarding() {
   const [testDone, setTestDone] = useState(false)
   const [testMsg, setTestMsg] = useState('')
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const [ready, setReady] = useState(false)
   const [userId, setUserId] = useState('')
   const sb = browserClient()
@@ -28,7 +29,7 @@ export default function Onboarding() {
       const { data: biz } = await sb.from('businesses')
         .select('name, phone, google_review_link, onboarding_done')
         .eq('id', user.id).single()
-      if (biz?.onboarding_done) { router.push('/dashboard'); return }
+      if (biz?.onboarding_done) { window.location.href = '/dashboard'; return }
       if (biz?.name) setName(biz.name)
       if (biz?.phone) setPhone(biz.phone)
       if (biz?.google_review_link) setLink(biz.google_review_link)
@@ -40,9 +41,7 @@ export default function Onboarding() {
   async function saveStep1() {
     if (!name.trim()) return
     setSaving(true)
-    await sb.from('businesses').upsert({
-      id: userId, name, phone: phone || null, onboarding_done: false
-    })
+    await sb.from('businesses').upsert({ id: userId, name, phone: phone || null })
     setSaving(false)
     setStep(1)
   }
@@ -50,8 +49,7 @@ export default function Onboarding() {
   async function saveStep2() {
     setSaving(true)
     await sb.from('businesses').upsert({
-      id: userId, name, phone: phone || null,
-      google_review_link: link || null, onboarding_done: false
+      id: userId, name, phone: phone || null, google_review_link: link || null
     })
     setSaving(false)
     setStep(2)
@@ -75,21 +73,25 @@ export default function Onboarding() {
 
   async function finish() {
     setSaving(true)
-    // Use upsert with ALL fields to guarantee the row exists and onboarding_done=true
-    const { error } = await sb.from('businesses').upsert({
-      id: userId,
-      name,
-      phone: phone || null,
-      google_review_link: link || null,
-      onboarding_done: true,
-    })
-    if (error) {
-      console.error('Finish error:', error)
+    setSaveError('')
+    try {
+      // Use server-side API route to bypass any RLS issues
+      const r = await fetch('/api/complete-onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, google_review_link: link }),
+      })
+      const d = await r.json()
+      if (!r.ok) {
+        setSaveError('Feil: ' + (d.error ?? 'Ukjent feil. Prøv igjen.'))
+        setSaving(false)
+        return
+      }
+      window.location.href = '/dashboard'
+    } catch (e) {
+      setSaveError('Nettverksfeil. Prøv igjen.')
       setSaving(false)
-      return
     }
-    // Hard redirect to force server re-fetch of onboarding_done
-    window.location.href = '/dashboard'
   }
 
   if (!ready) {
@@ -113,7 +115,6 @@ export default function Onboarding() {
           <p className="text-gray-500 text-sm">La oss sette opp kontoen din – tar 2 minutter</p>
         </div>
 
-        {/* Progress */}
         <div className="flex items-center mb-8">
           {steps.map((s, i) => (
             <div key={s} className="flex items-center flex-1">
@@ -205,9 +206,6 @@ export default function Onboarding() {
                   </div>
                 )}
               </div>
-              <div className="mt-3 bg-gray-50 border border-gray-100 rounded-xl p-3 text-xs text-gray-500">
-                Legg inn <code className="bg-gray-100 px-1 rounded">ELKS_USERNAME</code> og <code className="bg-gray-100 px-1 rounded">ELKS_PASSWORD</code> i Vercel Environment Variables
-              </div>
               <div className="mt-5 flex justify-between">
                 <button onClick={() => setStep(1)} className="btn-secondary px-5">← Tilbake</button>
                 <button onClick={() => setStep(3)} className={`px-8 ${testDone ? 'btn-primary' : 'btn-secondary'}`}>
@@ -230,7 +228,7 @@ export default function Onboarding() {
                 {[
                   { done: true, text: 'Bedriftsnavn satt: ' + name },
                   { done: !!link, text: link ? 'Google-lenke koblet til' : 'Google-lenke ikke satt (gjøres i innstillinger)' },
-                  { done: testDone, text: testDone ? 'SMS-integrasjon testet og fungerer' : 'SMS ikke testet ennå' },
+                  { done: testDone, text: testDone ? 'SMS testet og fungerer' : 'SMS ikke testet ennå' },
                 ].map(item => (
                   <div key={item.text} className={`flex items-center gap-2 text-sm ${item.done ? 'text-gray-700' : 'text-gray-400'}`}>
                     <span className={`text-base ${item.done ? 'text-green-500' : 'text-gray-300'}`}>{item.done ? '✓' : '○'}</span>
@@ -238,6 +236,11 @@ export default function Onboarding() {
                   </div>
                 ))}
               </div>
+              {saveError && (
+                <div className="bg-red-50 text-red-600 text-sm rounded-xl px-4 py-3 border border-red-100 mb-4">
+                  {saveError}
+                </div>
+              )}
               <button onClick={finish} disabled={saving} className="btn-primary w-full py-3 text-base">
                 {saving ? 'Lagrer...' : 'Gå til dashbordet →'}
               </button>
