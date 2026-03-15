@@ -149,7 +149,7 @@ export default function Landing() {
 
             <ul className="space-y-4 mb-10 text-left max-w-xs mx-auto">
               {[
-                '100 SMS inkludert per måned',
+                '100 SMS inkludert per måned (0,40 kr/SMS deretter)',
                 'Automatiske påminnelser (24t og 2t)',
                 'Google-anmeldelseslenke etter besøk',
                 'Avbestillingslenke i SMS',

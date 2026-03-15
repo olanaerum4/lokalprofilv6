@@ -8,6 +8,8 @@ export type Business = {
   sms_reminder_24h: string | null
   sms_reminder_2h: string | null
   sms_after_appointment: string | null
+  sms_count_month: number
+  sms_period_start: string | null
   created_at: string
 }
 

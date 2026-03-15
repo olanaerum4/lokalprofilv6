@@ -85,3 +85,8 @@ alter table businesses
   add column if not exists sms_reminder_24h text,
   add column if not exists sms_reminder_2h text,
   add column if not exists sms_after_appointment text;
+
+-- SMS usage tracking
+alter table businesses
+  add column if not exists sms_count_month int default 0,
+  add column if not exists sms_period_start date default current_date;

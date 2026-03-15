@@ -7,6 +7,9 @@ function fmt(ts: string, opts: Intl.DateTimeFormatOptions) {
   return new Date(ts).toLocaleString('nb-NO', opts)
 }
 
+const SMS_INCLUDED = 100
+const SMS_OVERAGE_PRICE = 0.40
+
 export default async function Dashboard() {
   const sb = await serverClient()
   const { data: { user } } = await sb.auth.getUser()
@@ -48,6 +51,18 @@ export default async function Dashboard() {
   const upcoming = todayC?.filter(c => new Date(c.appointment_time) >= now && !c.cancelled) ?? []
   const past = todayC?.filter(c => new Date(c.appointment_time) < now) ?? []
 
+  // SMS usage
+  const smsUsed = biz.sms_count_month ?? 0
+  const smsOver = Math.max(0, smsUsed - SMS_INCLUDED)
+  const smsExtraCost = smsOver * SMS_OVERAGE_PRICE
+  const smsPct = Math.min(100, Math.round((smsUsed / SMS_INCLUDED) * 100))
+  const isOverLimit = smsUsed > SMS_INCLUDED
+
+  // Period
+  const periodStart = biz.sms_period_start
+    ? new Date(biz.sms_period_start).toLocaleDateString('nb-NO', { day: 'numeric', month: 'long' })
+    : null
+
   return (
     <div className="p-5 md:p-7 max-w-5xl">
       <div className="flex items-start justify-between mb-6">
@@ -63,12 +78,30 @@ export default async function Dashboard() {
         </Link>
       </div>
 
+      {/* BILLING ALERT - shown prominently when over limit */}
+      {isOverLimit && (
+        <div className="mb-5 bg-red-50 border-2 border-red-200 rounded-2xl p-5">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-red-800 text-base">Du har brukt {smsUsed} av 100 inkluderte SMS</p>
+              <p className="text-red-600 text-sm mt-1">
+                {smsOver} SMS over kvoten → <strong>{smsExtraCost.toFixed(2).replace('.', ',')} kr</strong> ekstra denne måneden (à 0,40 kr/SMS)
+              </p>
+              <p className="text-red-500 text-xs mt-2">Faktureres ved månedsslutt. Kontakt oss på <a href="mailto:kontakt@lokalprofil.no" className="underline font-semibold">kontakt@lokalprofil.no</a> ved spørsmål.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         {[
           { label: 'Timer i dag', value: todayC?.filter(c => !c.cancelled).length ?? 0, icon: '📅' },
           { label: 'Totale kunder', value: totalC ?? 0, icon: '👥' },
-          { label: avg ? `Snitt (30d)` : 'Snitt', value: avg ? `${avg} ★` : '–', icon: '⭐', highlight: avg !== null && parseFloat(avg) >= 4, sub: satisfactionPct !== null ? `${satisfactionPct}% fornøyde` : undefined },
+          { label: avg ? 'Snitt (30d)' : 'Snitt', value: avg ? `${avg} ★` : '–', icon: '⭐', highlight: avg !== null && parseFloat(avg) >= 4, sub: satisfactionPct !== null ? `${satisfactionPct}% fornøyde` : undefined },
           { label: 'Avbestillinger', value: cancelledCount ?? 0, icon: '❌', sub: `${noShowCount ?? 0} no-shows` },
         ].map(s => (
           <div key={s.label} className={`card ${s.highlight ? 'border-green-200 bg-green-50' : ''}`}>
@@ -106,10 +139,7 @@ export default async function Dashboard() {
                     isUpcoming ? 'bg-green-50 border-green-100' :
                     'bg-gray-50 border-gray-100'
                   }`}>
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                      c.cancelled ? 'bg-red-400' : c.no_show ? 'bg-orange-400' :
-                      isUpcoming ? 'bg-green-500' : 'bg-gray-300'
-                    }`} />
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${c.cancelled ? 'bg-red-400' : c.no_show ? 'bg-orange-400' : isUpcoming ? 'bg-green-500' : 'bg-gray-300'}`} />
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-semibold truncate ${c.cancelled || c.no_show ? 'line-through text-gray-400' : !isUpcoming ? 'text-gray-500' : 'text-gray-900'}`}>{c.name}</p>
                       <p className="text-xs text-gray-400">{c.phone}</p>
@@ -131,6 +161,39 @@ export default async function Dashboard() {
 
         {/* Right column */}
         <div className="space-y-4">
+          {/* SMS usage widget */}
+          <div className={`card ${isOverLimit ? 'border-red-200' : ''}`}>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold text-gray-900">SMS denne måneden</h2>
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isOverLimit ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'}`}>
+                {smsUsed} / 100
+              </span>
+            </div>
+            {/* Progress bar */}
+            <div className="w-full bg-gray-100 rounded-full h-2.5 mb-2">
+              <div
+                className={`h-2.5 rounded-full transition-all ${isOverLimit ? 'bg-red-500' : smsPct > 75 ? 'bg-amber-500' : 'bg-green-500'}`}
+                style={{ width: `${Math.min(100, smsPct)}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-gray-400 mb-3">
+              <span>{smsUsed} sendt</span>
+              <span>{Math.max(0, SMS_INCLUDED - smsUsed)} igjen</span>
+            </div>
+            {isOverLimit ? (
+              <div className="bg-red-50 rounded-xl px-3 py-2.5 text-xs text-red-600 border border-red-100">
+                <strong>{smsOver} SMS over kvoten</strong> = {smsExtraCost.toFixed(2).replace('.', ',')} kr ekstra
+              </div>
+            ) : smsPct > 75 ? (
+              <div className="bg-amber-50 rounded-xl px-3 py-2.5 text-xs text-amber-700 border border-amber-100">
+                Nærmer deg grensen på 100 SMS
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400">Inkluderer 100 SMS/mnd · 0,40 kr/SMS deretter</p>
+            )}
+            {periodStart && <p className="text-xs text-gray-300 mt-2">Periode startet {periodStart}</p>}
+          </div>
+
           {/* Recent feedback */}
           <div className="card">
             <div className="flex items-center justify-between mb-3">
@@ -161,16 +224,21 @@ export default async function Dashboard() {
           <div className="card">
             <h2 className="font-semibold text-gray-900 mb-3">Hurtiglenker</h2>
             <div className="space-y-1.5">
-              <QuickLink href="/meldinger" icon="💬" label="Meldingsboks" />
-              <QuickLink href="/api/export?type=kunder" icon="📥" label="Eksporter kunder (CSV)" external />
-              <QuickLink href="/api/export?type=tilbakemeldinger" icon="📊" label="Eksporter tilbakemeldinger" external />
-              <QuickLink href="/innstillinger" icon="⚙️" label="Innstillinger" />
+              {[
+                { href: '/meldinger', icon: '💬', label: 'Meldingsboks' },
+                { href: '/api/export?type=kunder', icon: '📥', label: 'Eksporter kunder (CSV)', external: true },
+                { href: '/innstillinger', icon: '⚙️', label: 'Innstillinger' },
+              ].map(item => (
+                item.external
+                  ? <a key={item.href} href={item.href} target="_blank" rel="noopener" className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm text-gray-600 hover:text-gray-900 font-medium"><span>{item.icon}</span>{item.label}</a>
+                  : <Link key={item.href} href={item.href} className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm text-gray-600 hover:text-gray-900 font-medium"><span>{item.icon}</span>{item.label}</Link>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Test SMS widget */}
+      {/* Test SMS */}
       <TestSmsWidget bizPhone={biz.phone} />
 
       {!biz.google_review_link && (
@@ -178,17 +246,11 @@ export default async function Dashboard() {
           <span className="text-xl">🌟</span>
           <div className="flex-1">
             <p className="text-sm font-semibold text-amber-800">Legg til Google-anmeldelseslenke</p>
-            <p className="text-xs text-amber-600 mt-0.5">Kunder med 4–5 stjerner sendes automatisk dit.</p>
+            <p className="text-xs text-amber-600 mt-0.5">Sendes automatisk til kunder etter besøket.</p>
           </div>
           <Link href="/innstillinger" className="btn-primary text-xs px-4 py-2 flex-shrink-0">Sett opp</Link>
         </div>
       )}
     </div>
   )
-}
-
-function QuickLink({ href, icon, label, external }: { href: string; icon: string; label: string; external?: boolean }) {
-  const cls = "flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm text-gray-600 hover:text-gray-900 font-medium"
-  if (external) return <a href={href} className={cls} target="_blank" rel="noopener"><span className="text-sm">{icon}</span>{label}</a>
-  return <Link href={href} className={cls}><span className="text-sm">{icon}</span>{label}</Link>
 }
