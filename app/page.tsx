@@ -135,40 +135,45 @@ export default function Landing() {
       </section>
 
       {/* PRICING */}
-      <section id="pris" className="py-24 px-6 max-w-5xl mx-auto">
-        <div className="text-center mb-16">
-          <p className="text-green-600 font-semibold text-sm uppercase tracking-widest mb-3">Priser</p>
-          <h2 className="text-4xl font-bold text-gray-900">Enkelt og forutsigbart</h2>
-          <p className="text-gray-500 mt-3">SMS-kostnader via 46elks kommer i tillegg (ca. 0,40 kr per SMS)</p>
-        </div>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            { name: 'Starter', price: '149', period: '/mnd', features: ['Opptil 50 kunder/mnd', 'Automatiske påminnelser', 'Tilbakemeldingssystem', 'Google-anmeldelseslenke'], cta: 'Start gratis' },
-            { name: 'Vekst', price: '299', period: '/mnd', features: ['Ubegrenset antall kunder', 'Automatiske påminnelser', 'Tilbakemeldingssystem', 'Google-anmeldelseslenke', 'Prioritert support'], cta: 'Start gratis', featured: true },
-            { name: 'Bedrift', price: '599', period: '/mnd', features: ['Alt i Vekst', 'Flere lokasjoner', 'Egendefinerte maler', 'Dedikert onboarding', 'API-tilgang'], cta: 'Kontakt oss' },
-          ].map(plan => (
-            <div key={plan.name} className={`rounded-2xl p-7 flex flex-col ${plan.featured ? 'bg-green-600 text-white shadow-xl shadow-green-200 scale-105' : 'bg-white border border-gray-100'}`}>
-              {plan.featured && <div className="text-xs font-bold bg-white/20 text-white px-3 py-1 rounded-full self-start mb-4">Mest populær</div>}
-              <p className={`text-sm font-bold uppercase tracking-widest mb-2 ${plan.featured ? 'text-green-200' : 'text-gray-400'}`}>{plan.name}</p>
-              <div className="mb-1">
-                <span className={`text-4xl font-bold ${plan.featured ? 'text-white' : 'text-gray-900'}`}>{plan.price} kr</span>
-                <span className={`text-sm ${plan.featured ? 'text-green-200' : 'text-gray-400'}`}>{plan.period}</span>
-              </div>
-              <p className={`text-xs mb-6 ${plan.featured ? 'text-green-200' : 'text-gray-400'}`}>7 dager gratis, ingen kredittkort</p>
-              <ul className="space-y-2.5 mb-8 flex-1">
-                {plan.features.map(f => (
-                  <li key={f} className={`flex items-center gap-2 text-sm ${plan.featured ? 'text-green-100' : 'text-gray-600'}`}>
-                    <svg className={`w-4 h-4 flex-shrink-0 ${plan.featured ? 'text-green-300' : 'text-green-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/></svg>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link href={plan.name === 'Bedrift' ? 'mailto:kontakt@lokalprofil.no' : '/register'}
-                className={`text-center font-bold py-3 rounded-xl text-sm transition-all ${plan.featured ? 'bg-white text-green-600 hover:bg-green-50' : 'bg-gray-900 text-white hover:bg-gray-700'}`}>
-                {plan.cta} →
-              </Link>
+      <section id="pris" className="py-24 px-6">
+        <div className="max-w-lg mx-auto text-center">
+          <p className="text-green-600 font-semibold text-sm uppercase tracking-widest mb-3">Pris</p>
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">Én plan. Alt inkludert.</h2>
+          <p className="text-gray-500 mb-12">Ingen skjulte kostnader. Ingen valg du må ta.</p>
+
+          <div className="bg-green-600 rounded-3xl p-10 text-white shadow-2xl shadow-green-200">
+            <div className="mb-8">
+              <span className="text-7xl font-bold">299</span>
+              <span className="text-2xl font-medium text-green-200"> kr/mnd</span>
             </div>
-          ))}
+
+            <ul className="space-y-4 mb-10 text-left max-w-xs mx-auto">
+              {[
+                '100 SMS inkludert per måned',
+                'Automatiske påminnelser (24t og 2t)',
+                'Google-anmeldelseslenke etter besøk',
+                'Avbestillingslenke i SMS',
+                'Meldingsboks og kundehistorikk',
+                'Redigerbare SMS-maler',
+                'Ubegrenset antall kunder',
+              ].map(f => (
+                <li key={f} className="flex items-center gap-3 text-sm text-green-100">
+                  <svg className="w-5 h-5 flex-shrink-0 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/></svg>
+                  {f}
+                </li>
+              ))}
+            </ul>
+
+            <Link href="/register"
+              className="block w-full bg-white text-green-600 font-bold py-4 rounded-2xl text-base hover:bg-green-50 transition-colors text-center">
+              Start 7 dager gratis →
+            </Link>
+            <p className="text-green-300 text-xs mt-4">Ingen kredittkort · Ingen bindingstid · Avbryt når som helst</p>
+          </div>
+
+          <p className="text-gray-400 text-sm mt-6">
+            Trenger du mer enn 100 SMS? <a href="mailto:kontakt@lokalprofil.no" className="text-green-600 hover:underline">Kontakt oss</a>
+          </p>
         </div>
       </section>
 
