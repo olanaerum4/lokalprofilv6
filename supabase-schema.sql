@@ -79,3 +79,9 @@ create index if not exists customers_appointment_time_idx on customers(appointme
 create index if not exists customers_cancel_token_idx on customers(cancel_token);
 create index if not exists feedback_business_id_idx on feedback(business_id);
 create index if not exists messages_customer_id_idx on messages(customer_id);
+
+-- SMS Templates (run this if you already have the schema)
+alter table businesses
+  add column if not exists sms_reminder_24h text,
+  add column if not exists sms_reminder_2h text,
+  add column if not exists sms_after_appointment text;

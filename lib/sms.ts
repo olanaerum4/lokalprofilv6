@@ -24,20 +24,46 @@ export async function sendSMS(to: string, message: string): Promise<{ ok: boolea
   }
 }
 
-export const sms = {
-  reminder24h: (name: string, biz: string, time: string, cancelUrl: string) =>
-    `Hei ${name}! Påminnelse om din time hos ${biz} i morgen kl ${time}.\nAvbestill her: ${cancelUrl}`,
+// Default templates
+export const DEFAULT_TEMPLATES = {
+  reminder24h: 'Hei {navn}! Påminnelse om din time hos {bedrift} i morgen kl {tid}.\nAvbestill her: {avbestill}',
+  reminder2h: 'Hei {navn}! Din time hos {bedrift} er om 2 timer (kl {tid}). Vi gleder oss til å se deg! 😊',
+  afterAppointment: 'Hei {navn}! Takk for besøket hos {bedrift} i dag 😊 Det ville betydd mye om du la igjen en anmeldelse: {google}',
+  afterAppointmentNoLink: 'Hei {navn}! Takk for besøket hos {bedrift} i dag 😊 Vi håper du var fornøyd!',
+}
 
-  reminder2h: (name: string, biz: string, time: string) =>
-    `Hei ${name}! Din time hos ${biz} er om 2 timer (kl ${time}). Vi gleder oss til å se deg! 😊`,
+// Replace variables in template
+export function fillTemplate(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? `{${key}}`)
+}
 
-  // MVP: send Google review link directly after appointment
-  reviewRequest: (name: string, biz: string, reviewLink: string) =>
-    `Hei ${name}! Takk for besøket hos ${biz} i dag 😊 Det ville betydd mye om du la igjen en anmeldelse her: ${reviewLink}`,
+export function buildReminder24h(
+  custom: string | null,
+  name: string, biz: string, time: string, cancelLink: string
+): string {
+  const tpl = custom || DEFAULT_TEMPLATES.reminder24h
+  return fillTemplate(tpl, { navn: name, bedrift: biz, tid: time, avbestill: cancelLink })
+}
 
-  // Fallback if no Google link set
-  reviewRequestNoLink: (name: string, biz: string) =>
-    `Hei ${name}! Takk for besøket hos ${biz} i dag 😊 Vi håper du var fornøyd!`,
+export function buildReminder2h(
+  custom: string | null,
+  name: string, biz: string, time: string
+): string {
+  const tpl = custom || DEFAULT_TEMPLATES.reminder2h
+  return fillTemplate(tpl, { navn: name, bedrift: biz, tid: time })
+}
+
+export function buildAfterAppointment(
+  custom: string | null,
+  name: string, biz: string, reviewLink: string | null
+): string {
+  if (reviewLink) {
+    const tpl = custom || DEFAULT_TEMPLATES.afterAppointment
+    return fillTemplate(tpl, { navn: name, bedrift: biz, google: reviewLink })
+  } else {
+    const tpl = custom || DEFAULT_TEMPLATES.afterAppointmentNoLink
+    return fillTemplate(tpl, { navn: name, bedrift: biz })
+  }
 }
 
 export function fmtTime(ts: string) {
