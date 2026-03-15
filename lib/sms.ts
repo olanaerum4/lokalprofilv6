@@ -6,17 +6,17 @@ export async function sendSMS(to: string, message: string): Promise<{ ok: boolea
   if (!u || !p) return { ok: false, error: 'ELKS_USERNAME eller ELKS_PASSWORD mangler' }
 
   try {
+    const params: Record<string, string> = { from, to, message }
+
     const r = await fetch('https://api.46elks.com/a1/sms', {
       method: 'POST',
       headers: {
         Authorization: 'Basic ' + Buffer.from(`${u}:${p}`).toString('base64'),
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({
-        from, to, message,
-        whenreply: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhook`,
-      }),
+      body: new URLSearchParams(params),
     })
+
     if (!r.ok) {
       const text = await r.text()
       return { ok: false, error: `46elks feil ${r.status}: ${text}` }
