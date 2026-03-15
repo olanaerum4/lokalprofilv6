@@ -6,17 +6,14 @@ export async function sendSMS(to: string, message: string): Promise<{ ok: boolea
   if (!u || !p) return { ok: false, error: 'ELKS_USERNAME eller ELKS_PASSWORD mangler' }
 
   try {
-    const params: Record<string, string> = { from, to, message }
-
     const r = await fetch('https://api.46elks.com/a1/sms', {
       method: 'POST',
       headers: {
         Authorization: 'Basic ' + Buffer.from(`${u}:${p}`).toString('base64'),
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams(params),
+      body: new URLSearchParams({ from, to, message }),
     })
-
     if (!r.ok) {
       const text = await r.text()
       return { ok: false, error: `46elks feil ${r.status}: ${text}` }
@@ -30,14 +27,17 @@ export async function sendSMS(to: string, message: string): Promise<{ ok: boolea
 export const sms = {
   reminder24h: (name: string, biz: string, time: string, cancelUrl: string) =>
     `Hei ${name}! Påminnelse om din time hos ${biz} i morgen kl ${time}.\nAvbestill her: ${cancelUrl}`,
+
   reminder2h: (name: string, biz: string, time: string) =>
     `Hei ${name}! Din time hos ${biz} er om 2 timer (kl ${time}). Vi gleder oss til å se deg! 😊`,
-  reviewRequest: (name: string, biz: string) =>
-    `Hei ${name}! Takk for besøket hos ${biz} i dag 😊 Hvordan var opplevelsen?\n1=Dårlig 2=OK 3=Bra 4=Veldig bra 5=Fantastisk`,
-  positive: (link: string) =>
-    `Så glad du er fornøyd! 🌟 Det hadde betydd mye om du la igjen en anmeldelse: ${link}`,
-  negative: () =>
-    `Det er leit å høre! Vi ønsker å bli bedre. Hva kan vi gjøre annerledes? Svar på denne meldingen.`,
+
+  // MVP: send Google review link directly after appointment
+  reviewRequest: (name: string, biz: string, reviewLink: string) =>
+    `Hei ${name}! Takk for besøket hos ${biz} i dag 😊 Det ville betydd mye om du la igjen en anmeldelse her: ${reviewLink}`,
+
+  // Fallback if no Google link set
+  reviewRequestNoLink: (name: string, biz: string) =>
+    `Hei ${name}! Takk for besøket hos ${biz} i dag 😊 Vi håper du var fornøyd!`,
 }
 
 export function fmtTime(ts: string) {
