@@ -1,6 +1,10 @@
-export async function sendSMS(to: string, message: string) {
+export async function sendSMS(to: string, message: string): Promise<{ ok: boolean; error?: string }> {
   const u = process.env.ELKS_USERNAME!
   const p = process.env.ELKS_PASSWORD!
+  const from = process.env.ELKS_FROM_NUMBER || 'LokalProfil'
+
+  if (!u || !p) return { ok: false, error: 'ELKS_USERNAME eller ELKS_PASSWORD mangler' }
+
   try {
     const r = await fetch('https://api.46elks.com/a1/sms', {
       method: 'POST',
@@ -9,12 +13,18 @@ export async function sendSMS(to: string, message: string) {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        from: 'LokalProfil', to, message,
+        from, to, message,
         whenreply: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhook`,
       }),
     })
-    return r.ok
-  } catch { return false }
+    if (!r.ok) {
+      const text = await r.text()
+      return { ok: false, error: `46elks feil ${r.status}: ${text}` }
+    }
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: String(e) }
+  }
 }
 
 export const sms = {

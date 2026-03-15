@@ -11,8 +11,10 @@ export default function Meldinger() {
   const [messages, setMessages] = useState<Msg[]>([])
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState('')
   const [bizId, setBizId] = useState('')
   const [search, setSearch] = useState('')
+  const [loading, setLoading] = useState(true)
   const bottomRef = useRef<HTMLDivElement>(null)
   const sb = browserClient()
 
@@ -21,8 +23,10 @@ export default function Meldinger() {
       const { data: { user } } = await sb.auth.getUser()
       if (!user) return
       setBizId(user.id)
-      const { data } = await sb.from('customers').select('*').eq('business_id', user.id).order('created_at', { ascending: false })
+      const { data } = await sb.from('customers').select('*')
+        .eq('business_id', user.id).order('created_at', { ascending: false })
       setCustomers(data ?? [])
+      setLoading(false)
     }
     load()
   }, [])
@@ -31,34 +35,68 @@ export default function Meldinger() {
     if (!selected) return
     loadMessages(selected.id)
     const channel = sb.channel(`msgs-${selected.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `customer_id=eq.${selected.id}` },
-        payload => setMessages(prev => [...prev, payload.new as Msg]))
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'messages',
+        filter: `customer_id=eq.${selected.id}`
+      }, payload => setMessages(prev => [...prev, payload.new as Msg]))
       .subscribe()
     return () => { sb.removeChannel(channel) }
   }, [selected])
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   async function loadMessages(customerId: string) {
-    const { data } = await sb.from('messages').select('*').eq('customer_id', customerId).order('created_at')
+    const { data } = await sb.from('messages').select('*')
+      .eq('customer_id', customerId).order('created_at')
     setMessages(data ?? [])
   }
 
   async function sendMessage() {
     if (!text.trim() || !selected) return
-    setSending(true)
-    const body = text.trim(); setText('')
-    // Save to DB
-    const { data } = await sb.from('messages').insert({
-      business_id: (await sb.auth.getUser()).data.user?.id ?? bizId, customer_id: selected.id, direction: 'out', body,
-    }).select().single()
-    if (data) setMessages(prev => [...prev, data])
-    // Send via API
-    await fetch('/api/send-sms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: selected.phone, message: body }),
-    })
+    const body = text.trim()
+    setText(''); setSending(true); setSendError('')
+
+    // Optimistically add to UI
+    const tempMsg: Msg = {
+      id: 'temp-' + Date.now(),
+      direction: 'out', body,
+      created_at: new Date().toISOString(),
+    }
+    setMessages(prev => [...prev, tempMsg])
+
+    try {
+      // Send via API
+      const r = await fetch('/api/send-sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: selected.phone, message: body }),
+      })
+      const d = await r.json()
+
+      if (!d.ok) {
+        // Remove optimistic message and show error
+        setMessages(prev => prev.filter(m => m.id !== tempMsg.id))
+        setSendError(d.error ?? 'SMS-sending feilet')
+        setText(body)
+        setSending(false)
+        return
+      }
+
+      // Save to DB
+      const userId = bizId || (await sb.auth.getUser()).data.user?.id
+      const { data: saved } = await sb.from('messages').insert({
+        business_id: userId, customer_id: selected.id, direction: 'out', body,
+      }).select().single()
+
+      // Replace temp with real
+      if (saved) setMessages(prev => prev.map(m => m.id === tempMsg.id ? saved : m))
+    } catch (e) {
+      setMessages(prev => prev.filter(m => m.id !== tempMsg.id))
+      setSendError('Nettverksfeil')
+      setText(body)
+    }
     setSending(false)
   }
 
@@ -68,16 +106,13 @@ export default function Meldinger() {
 
   function fmtTime(ts: string) {
     const d = new Date(ts)
-    const today = new Date()
-    if (d.toDateString() === today.toDateString())
+    if (d.toDateString() === new Date().toDateString())
       return d.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })
     return d.toLocaleDateString('nb-NO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
   }
 
-  // Get last message per customer for preview
-
   return (
-    <div className="flex h-screen md:h-[calc(100vh-0px)] overflow-hidden">
+    <div className="flex h-[calc(100vh-0px)] overflow-hidden">
       {/* Customer list */}
       <div className={`${selected ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-72 bg-white border-r border-gray-100 flex-shrink-0`}>
         <div className="p-4 border-b border-gray-100">
@@ -88,8 +123,11 @@ export default function Meldinger() {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {filtered.length === 0 && (
-            <p className="text-sm text-gray-400 text-center py-12 px-4">Ingen kunder ennå.<br/>Legg til kunder under Kunder.</p>
+          {loading && <p className="text-xs text-gray-400 text-center py-8">Laster...</p>}
+          {!loading && filtered.length === 0 && (
+            <p className="text-sm text-gray-400 text-center py-12 px-4">
+              {customers.length === 0 ? 'Ingen kunder ennå. Legg til kunder under Kunder.' : 'Ingen treff'}
+            </p>
           )}
           {filtered.map(c => (
             <button key={c.id} onClick={() => setSelected(c)}
@@ -131,37 +169,49 @@ export default function Meldinger() {
                   <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
                 </div>
                 <p className="text-sm text-gray-400">Ingen meldinger ennå</p>
-                <p className="text-xs text-gray-300 mt-1">Send en melding for å starte samtalen</p>
+                <p className="text-xs text-gray-300 mt-1">Send en melding under</p>
               </div>
             )}
             {messages.map(m => (
               <div key={m.id} className={`flex ${m.direction === 'out' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-xs lg:max-w-sm px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                  m.id.startsWith('temp-') ? 'opacity-60' : ''
+                } ${
                   m.direction === 'out'
                     ? 'bg-green-600 text-white rounded-br-md'
                     : 'bg-white border border-gray-200 text-gray-800 rounded-bl-md'
                 }`}>
                   <p>{m.body}</p>
-                  <p className={`text-[10px] mt-1 ${m.direction === 'out' ? 'text-green-200' : 'text-gray-400'}`}>{fmtTime(m.created_at)}</p>
+                  <p className={`text-[10px] mt-1 ${m.direction === 'out' ? 'text-green-200' : 'text-gray-400'}`}>
+                    {m.id.startsWith('temp-') ? 'Sender...' : fmtTime(m.created_at)}
+                  </p>
                 </div>
               </div>
             ))}
             <div ref={bottomRef} />
           </div>
 
+          {/* Error */}
+          {sendError && (
+            <div className="bg-red-50 border-t border-red-100 px-4 py-2 flex items-center justify-between">
+              <p className="text-xs text-red-600">{sendError}</p>
+              <button onClick={() => setSendError('')} className="text-red-400 hover:text-red-600 ml-2">✕</button>
+            </div>
+          )}
+
           {/* Input */}
-          <div className="bg-white border-t border-gray-100 p-3 flex gap-2">
+          <div className="bg-white border-t border-gray-100 p-3 flex gap-2 items-end">
             <textarea
               value={text}
               onChange={e => setText(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
-              placeholder="Skriv en melding..."
+              placeholder="Skriv en melding... (Enter for å sende)"
               rows={1}
               className="flex-1 input resize-none py-2.5 text-sm"
               style={{ minHeight: '42px', maxHeight: '120px' }}
             />
             <button onClick={sendMessage} disabled={sending || !text.trim()}
-              className="btn-primary px-4 flex-shrink-0 flex items-center gap-1.5">
+              className="btn-primary px-4 flex-shrink-0 flex items-center gap-1.5 py-2.5">
               {sending ? (
                 <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
               ) : (
@@ -178,6 +228,7 @@ export default function Meldinger() {
               <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
             </div>
             <p className="text-sm font-medium text-gray-500">Velg en kunde for å se meldinger</p>
+            <p className="text-xs text-gray-400 mt-1">Meldinger sendes som SMS via 46elks</p>
           </div>
         </div>
       )}

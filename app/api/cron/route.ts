@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
     for (const c of r24 ?? []) {
       const msg = sms.reminder24h(c.name, (c.businesses as any).name, fmtTime(c.appointment_time), cancelUrl(c.cancel_token))
-      const ok = await sendSMS(c.phone, msg)
+      const { ok } = await sendSMS(c.phone, msg)
       if (ok) { await sb.from('customers').update({ reminded_24h: true }).eq('id', c.id); sent++ }
       else errors++
     }
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
 
     for (const c of r2 ?? []) {
       const msg = sms.reminder2h(c.name, (c.businesses as any).name, fmtTime(c.appointment_time))
-      const ok = await sendSMS(c.phone, msg)
+      const { ok } = await sendSMS(c.phone, msg)
       if (ok) { await sb.from('customers').update({ reminded_2h: true }).eq('id', c.id); sent++ }
       else errors++
     }
@@ -49,7 +49,7 @@ export async function GET(req: Request) {
 
     for (const c of rr ?? []) {
       const msg = sms.reviewRequest(c.name, (c.businesses as any).name)
-      const ok = await sendSMS(c.phone, msg)
+      const { ok } = await sendSMS(c.phone, msg)
       if (ok) { await sb.from('customers').update({ review_requested: true }).eq('id', c.id); sent++ }
       else errors++
     }
