@@ -16,6 +16,7 @@ export default function Onboarding() {
   const [testMsg, setTestMsg] = useState('')
   const [saving, setSaving] = useState(false)
   const [ready, setReady] = useState(false)
+  const [userId, setUserId] = useState('')
   const sb = browserClient()
   const router = useRouter()
 
@@ -23,9 +24,11 @@ export default function Onboarding() {
     async function check() {
       const { data: { user } } = await sb.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data: biz } = await sb.from('businesses').select('name, phone, google_review_link, onboarding_done').eq('id', user.id).single()
+      setUserId(user.id)
+      const { data: biz } = await sb.from('businesses')
+        .select('name, phone, google_review_link, onboarding_done')
+        .eq('id', user.id).single()
       if (biz?.onboarding_done) { router.push('/dashboard'); return }
-      // Pre-fill if they have existing data
       if (biz?.name) setName(biz.name)
       if (biz?.phone) setPhone(biz.phone)
       if (biz?.google_review_link) setLink(biz.google_review_link)
@@ -37,16 +40,19 @@ export default function Onboarding() {
   async function saveStep1() {
     if (!name.trim()) return
     setSaving(true)
-    const { data: { user } } = await sb.auth.getUser()
-    if (user) await sb.from('businesses').upsert({ id: user.id, name, phone })
+    await sb.from('businesses').upsert({
+      id: userId, name, phone: phone || null, onboarding_done: false
+    })
     setSaving(false)
     setStep(1)
   }
 
   async function saveStep2() {
     setSaving(true)
-    const { data: { user } } = await sb.auth.getUser()
-    if (user) await sb.from('businesses').update({ google_review_link: link || null }).eq('id', user.id)
+    await sb.from('businesses').upsert({
+      id: userId, name, phone: phone || null,
+      google_review_link: link || null, onboarding_done: false
+    })
     setSaving(false)
     setStep(2)
   }
@@ -62,16 +68,28 @@ export default function Onboarding() {
       })
       const d = await r.json()
       if (d.ok) { setTestDone(true); setTestMsg('✓ SMS mottatt! Integrasjonen fungerer.') }
-      else setTestMsg('✗ ' + (d.error ?? 'Sjekk ELKS_USERNAME og ELKS_PASSWORD i .env.local'))
+      else setTestMsg('✗ ' + (d.error ?? 'Sjekk ELKS_USERNAME og ELKS_PASSWORD'))
     } catch { setTestMsg('✗ Nettverksfeil') }
     setTesting(false)
   }
 
   async function finish() {
     setSaving(true)
-    const { data: { user } } = await sb.auth.getUser()
-    if (user) await sb.from('businesses').update({ onboarding_done: true }).eq('id', user.id)
-    router.push('/dashboard'); router.refresh()
+    // Use upsert with ALL fields to guarantee the row exists and onboarding_done=true
+    const { error } = await sb.from('businesses').upsert({
+      id: userId,
+      name,
+      phone: phone || null,
+      google_review_link: link || null,
+      onboarding_done: true,
+    })
+    if (error) {
+      console.error('Finish error:', error)
+      setSaving(false)
+      return
+    }
+    // Hard redirect to force server re-fetch of onboarding_done
+    window.location.href = '/dashboard'
   }
 
   if (!ready) {
@@ -95,7 +113,7 @@ export default function Onboarding() {
           <p className="text-gray-500 text-sm">La oss sette opp kontoen din – tar 2 minutter</p>
         </div>
 
-        {/* Progress bar */}
+        {/* Progress */}
         <div className="flex items-center mb-8">
           {steps.map((s, i) => (
             <div key={s} className="flex items-center flex-1">
@@ -119,8 +137,6 @@ export default function Onboarding() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-
-          {/* Step 0: bedrift */}
           {step === 0 && (
             <div>
               <h2 className="text-lg font-bold text-gray-900 mb-1">Hva heter bedriften din?</h2>
@@ -145,7 +161,6 @@ export default function Onboarding() {
             </div>
           )}
 
-          {/* Step 1: Google link */}
           {step === 1 && (
             <div>
               <h2 className="text-lg font-bold text-gray-900 mb-1">Google-anmeldelseslenke</h2>
@@ -171,7 +186,6 @@ export default function Onboarding() {
             </div>
           )}
 
-          {/* Step 2: Test SMS */}
           {step === 2 && (
             <div>
               <h2 className="text-lg font-bold text-gray-900 mb-1">Test SMS-utsending</h2>
@@ -192,7 +206,7 @@ export default function Onboarding() {
                 )}
               </div>
               <div className="mt-3 bg-gray-50 border border-gray-100 rounded-xl p-3 text-xs text-gray-500">
-                Legg inn <code className="bg-gray-100 px-1 rounded">ELKS_USERNAME</code> og <code className="bg-gray-100 px-1 rounded">ELKS_PASSWORD</code> i <code className="bg-gray-100 px-1 rounded">.env.local</code>
+                Legg inn <code className="bg-gray-100 px-1 rounded">ELKS_USERNAME</code> og <code className="bg-gray-100 px-1 rounded">ELKS_PASSWORD</code> i Vercel Environment Variables
               </div>
               <div className="mt-5 flex justify-between">
                 <button onClick={() => setStep(1)} className="btn-secondary px-5">← Tilbake</button>
@@ -203,7 +217,6 @@ export default function Onboarding() {
             </div>
           )}
 
-          {/* Step 3: Done */}
           {step === 3 && (
             <div className="text-center py-4">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -226,7 +239,7 @@ export default function Onboarding() {
                 ))}
               </div>
               <button onClick={finish} disabled={saving} className="btn-primary w-full py-3 text-base">
-                {saving ? 'Starter...' : 'Gå til dashbordet →'}
+                {saving ? 'Lagrer...' : 'Gå til dashbordet →'}
               </button>
             </div>
           )}
