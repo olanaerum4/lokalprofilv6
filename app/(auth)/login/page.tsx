@@ -47,7 +47,8 @@ export default function Login() {
               {loading ? 'Logger inn...' : 'Logg inn'}
             </button>
           </div>
-          <p className="text-center text-sm text-gray-500 mt-5">
+          <div className="mt-4 text-center"><Link href="/glemt-passord" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Glemt passord?</Link></div>
+          <p className="text-center text-sm text-gray-500 mt-3">
             Ingen konto? <Link href="/register" className="text-green-600 font-semibold hover:underline">Registrer deg</Link>
           </p>
         </div>
