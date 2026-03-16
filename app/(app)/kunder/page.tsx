@@ -137,8 +137,16 @@ export default function Kunder() {
 
 function Row({ c, onDelete, onNoShow }: { c: Customer; onDelete: (id: string) => void; onNoShow: (id: string, cur: boolean) => void }) {
   const [confirm, setConfirm] = useState(false)
+  const [copied, setCopied] = useState(false)
   const now = new Date()
   const upcoming = new Date(c.appointment_time) >= now && !c.cancelled
+
+  function copyCancelLink() {
+    const url = `${window.location.origin}/avbestill/${c.cancel_token}`
+    navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   return (
     <div className={`bg-white rounded-xl border p-3.5 flex items-center gap-3 ${
@@ -182,6 +190,16 @@ function Row({ c, onDelete, onNoShow }: { c: Customer; onDelete: (id: string) =>
               c.no_show ? 'bg-orange-100 text-orange-600 border-orange-200' : 'bg-gray-50 text-gray-400 border-gray-200 hover:border-orange-300 hover:text-orange-500'
             }`}>
             {c.no_show ? '⚠ No-show' : 'No-show?'}
+          </button>
+        )}
+
+        {upcoming && c.cancel_token && (
+          <button onClick={copyCancelLink} title="Kopier avbestillingslenke"
+            className="text-gray-300 hover:text-blue-400 transition-colors p-1 flex-shrink-0">
+            {copied
+              ? <span className="text-[9px] text-blue-500 font-semibold">Kopiert!</span>
+              : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+            }
           </button>
         )}
 

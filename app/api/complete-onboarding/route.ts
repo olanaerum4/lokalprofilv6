@@ -14,6 +14,7 @@ export async function POST(req: Request) {
 
   const { error } = await sb.from('businesses').upsert({
     id: user.id,
+    email: user.email,
     name,
     phone: phone || null,
     google_review_link: google_review_link || null,
