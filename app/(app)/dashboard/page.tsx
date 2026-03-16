@@ -245,6 +245,23 @@ export default async function Dashboard() {
         </div>
       </div>
 
+      {/* Trial banner */}
+      {(() => {
+        const trialDaysLeft = 7 - Math.floor((Date.now() - new Date(biz.created_at).getTime()) / 86400000)
+        if (trialDaysLeft > 0 && trialDaysLeft <= 7) return (
+          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-center gap-3">
+            <span className="text-xl">🎁</span>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-blue-800">
+                {trialDaysLeft === 1 ? 'Siste dag av prøveperioden!' : `${trialDaysLeft} dager igjen av prøveperioden`}
+              </p>
+              <p className="text-xs text-blue-600 mt-0.5">Du mottar betalingslenke på e-post når prøveperioden utløper. 299 kr/mnd inkl. 100 SMS.</p>
+            </div>
+          </div>
+        )
+        return null
+      })()}
+
       {/* Test SMS */}
       <TestSmsWidget bizPhone={biz.phone} />
 
