@@ -97,7 +97,7 @@ export default async function Dashboard() {
               <p className="text-red-600 text-sm mt-1">
                 {smsOver} SMS over kvoten → <strong>{smsExtraCost.toFixed(2).replace('.', ',')} kr</strong> ekstra denne måneden (à 0,40 kr/SMS)
               </p>
-              <p className="text-red-500 text-xs mt-2">Faktureres ved månedsslutt. Kontakt oss på <a href="mailto:kontakt@lokalprofil.no" className="underline font-semibold">kontakt@lokalprofil.no</a> ved spørsmål.</p>
+              <p className="text-red-500 text-xs mt-2">Faktureres automatisk ved månedsslutt – 0,40 kr/SMS over kvoten.</p>
             </div>
           </div>
         </div>
@@ -189,11 +189,11 @@ export default async function Dashboard() {
             </div>
             {isOverLimit ? (
               <div className="bg-red-50 rounded-xl px-3 py-2.5 text-xs text-red-600 border border-red-100">
-                <strong>{smsOver} SMS over kvoten</strong> = {smsExtraCost.toFixed(2).replace('.', ',')} kr ekstra
+                <strong>{smsOver} SMS over kvoten</strong> = {smsExtraCost.toFixed(2).replace('.', ',')} kr faktureres automatisk
               </div>
             ) : smsPct > 75 ? (
               <div className="bg-amber-50 rounded-xl px-3 py-2.5 text-xs text-amber-700 border border-amber-100">
-                Nærmer deg grensen på 100 SMS
+                Nærmer deg grensen – SMS over 100 koster 0,40 kr/stk
               </div>
             ) : (
               <p className="text-xs text-gray-400">Inkluderer 100 SMS/mnd · 0,40 kr/SMS deretter</p>

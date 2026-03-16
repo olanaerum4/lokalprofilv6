@@ -13,6 +13,7 @@ export async function POST(req: Request) {
 
   const result = await sendSMS(to, message)
   if (result.ok) {
+    // Track ALL outgoing SMS including test SMS
     await trackSmsUsage(user.id)
     return NextResponse.json({ ok: true })
   }

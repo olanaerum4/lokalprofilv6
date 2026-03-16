@@ -1,7 +1,9 @@
-// Server-only - never import in 'use client' files
+// Server-only – never import in 'use client' files
 import { adminClient } from '@/lib/supabase-server'
 
 export async function trackSmsUsage(businessId: string) {
+  if (!businessId) return
+
   const sb = adminClient()
   const today = new Date()
 
@@ -13,28 +15,28 @@ export async function trackSmsUsage(businessId: string) {
 
   if (!biz) return
 
-  // Billing date = day of month when they registered
-  const signupDate = new Date(biz.created_at)
-  const billingDay = signupDate.getDate()
+  // Billing day = day of month they signed up (default to 1 if missing)
+  const signupDay = biz.created_at ? new Date(biz.created_at).getDate() : 1
 
-  // Find the most recent billing date
-  const currentMonth = today.getMonth()
-  const currentYear = today.getFullYear()
-  let periodStart = new Date(currentYear, currentMonth, billingDay)
-
-  // If billing day hasn't arrived yet this month, use last month's billing date
+  // Find the most recent billing date (this month or last month)
+  const yr = today.getFullYear()
+  const mo = today.getMonth()
+  let periodStart = new Date(yr, mo, signupDay)
   if (periodStart > today) {
-    periodStart = new Date(currentYear, currentMonth - 1, billingDay)
+    periodStart = new Date(yr, mo - 1, signupDay)
   }
-
   const periodStartStr = periodStart.toISOString().split('T')[0]
-  const storedPeriodStart = biz.sms_period_start
 
-  // New billing period started since last SMS
-  const isNewPeriod = !storedPeriodStart || storedPeriodStart < periodStartStr
+  // Reset if new period
+  const stored = biz.sms_period_start
+  const isNewPeriod = !stored || stored < periodStartStr
 
-  await sb.from('businesses').update({
-    sms_count_month: isNewPeriod ? 1 : (biz.sms_count_month ?? 0) + 1,
-    sms_period_start: isNewPeriod ? periodStartStr : storedPeriodStart,
+  const newCount = isNewPeriod ? 1 : (biz.sms_count_month ?? 0) + 1
+
+  const { error } = await sb.from('businesses').update({
+    sms_count_month: newCount,
+    sms_period_start: isNewPeriod ? periodStartStr : stored,
   }).eq('id', businessId)
+
+  if (error) console.error('[SMS Tracker] Update failed:', error.message)
 }

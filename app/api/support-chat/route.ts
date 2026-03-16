@@ -13,6 +13,8 @@ LokalProfil er en SMS-basert kundeoppfølgingstjeneste for norske småbedrifter 
 - 7 dager gratis prøveperiode, ingen kredittkort nødvendig
 - Ingen bindingstid, avbryt når som helst
 - Fakturering: vi sender betalingslenke på e-post etter prøveperioden
+- Ekstra SMS faktureres AUTOMATISK ved månedsslutt – du trenger ikke kontakte oss
+- SMS-tellingen inkluderer alle SMS: påminnelser, Google-lenker OG test-SMS
 - SMS-kvoten nullstilles på faktureringsdatoen (dagen du registrerte deg)
 
 ## SMS-flyten
