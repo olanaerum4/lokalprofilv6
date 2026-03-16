@@ -19,7 +19,7 @@ LokalProfil er en SMS-basert kundeoppfølgingstjeneste for norske småbedrifter 
 
 ## SMS-flyten
 1. Kunden legges til med navn, telefonnummer og tidspunkt
-2. 24 timer før timen: påminnelse med avbestillingslenke sendes automatisk
+2. 24 timer før timen: påminnelse sendes automatisk
 3. 2 timer før timen: påminnelse sendes automatisk
 4. 1 time etter timen: melding med Google-anmeldelseslenke sendes automatisk
 - Kunder som avbestiller eller er no-show får IKKE Google-SMS
@@ -41,11 +41,6 @@ LokalProfil er en SMS-basert kundeoppfølgingstjeneste for norske småbedrifter 
 - Finn lenken i Google Business Profile → "Del anmeldelseslenke"
 - Legg den inn i Innstillinger → Google-anmeldelseslenke
 - Kunder som besøker deg sendes automatisk dit etter timen
-
-## Avbestilling
-- Kunder avbestiller via lenke i SMS-påminnelsen
-- Du ser avbestillingen umiddelbart i dashbordet
-- Avbestilte kunder markeres med rød farge
 
 ## No-show
 - Gå til Kunder → klikk "No-show?" på kunden

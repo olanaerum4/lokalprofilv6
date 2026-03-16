@@ -25,7 +25,7 @@ export async function sendSMS(to: string, message: string): Promise<{ ok: boolea
 }
 
 export const DEFAULT_TEMPLATES = {
-  reminder24h: 'Hei {navn}! Påminnelse om din time hos {bedrift} i morgen kl {tid}.\nAvbestill her: {avbestill}',
+  reminder24h: 'Hei {navn}! Påminnelse om din time hos {bedrift} i morgen kl {tid}.',
   reminder2h: 'Hei {navn}! Din time hos {bedrift} er om 2 timer (kl {tid}). Vi gleder oss til å se deg! 😊',
   afterAppointment: 'Hei {navn}! Takk for besøket hos {bedrift} i dag 😊 Det ville betydd mye om du la igjen en anmeldelse: {google}',
   afterAppointmentNoLink: 'Hei {navn}! Takk for besøket hos {bedrift} i dag 😊 Vi håper du var fornøyd!',
@@ -35,8 +35,8 @@ export function fillTemplate(template: string, vars: Record<string, string>): st
   return template.replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? `{${key}}`)
 }
 
-export function buildReminder24h(custom: string | null, name: string, biz: string, time: string, cancelLink: string): string {
-  return fillTemplate(custom || DEFAULT_TEMPLATES.reminder24h, { navn: name, bedrift: biz, tid: time, avbestill: cancelLink })
+export function buildReminder24h(custom: string | null, name: string, biz: string, time: string): string {
+  return fillTemplate(custom || DEFAULT_TEMPLATES.reminder24h, { navn: name, bedrift: biz, tid: time })
 }
 
 export function buildReminder2h(custom: string | null, name: string, biz: string, time: string): string {
@@ -54,6 +54,3 @@ export function fmtTime(ts: string) {
   return new Date(ts).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })
 }
 
-export function cancelUrl(token: string) {
-  return `${process.env.NEXT_PUBLIC_APP_URL}/avbestill/${token}`
-}

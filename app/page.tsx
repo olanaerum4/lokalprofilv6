@@ -150,9 +150,9 @@ export default function Landing() {
                 desc: 'Etter hvert besøk sendes en melding med din Google-anmeldelseslenke. Fornøyde kunder anmelder – med ett klikk.',
               },
               {
-                icon: '❌',
-                title: 'Enkel avbestilling',
-                desc: 'Avbestillingslenke i påminnelsen. Kunden avbestiller selv – du ser det umiddelbart i dashbordet.',
+                icon: '📱',
+                title: 'Meldingsboks',
+                desc: 'Send SMS direkte til kunder fra dashbordet. Full historikk per kunde.',
               },
               {
                 icon: '💬',
@@ -212,7 +212,7 @@ export default function Landing() {
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-5">Eksempel på SMS-flyt</p>
               <div className="space-y-3">
                 {[
-                  { label: '24t før', msg: 'Hei Kari! Påminnelse om din time hos Hansens Frisør i morgen kl 10:00.\nAvbestill her: lokalprofil.no/avbestill/...', out: true },
+                  { label: '24t før', msg: 'Hei Kari! Påminnelse om din time hos Hansens Frisør i morgen kl 10:00.', out: true },
                   { label: '2t før', msg: 'Hei Kari! Din time hos Hansens Frisør er om 2 timer (kl 10:00). Vi gleder oss til å se deg! 😊', out: true },
                   { label: '1t etter', msg: 'Hei Kari! Takk for besøket hos Hansens Frisør 😊 Det ville betydd mye om du la igjen en anmeldelse: g.page/r/...', out: true },
                 ].map((item, i) => (

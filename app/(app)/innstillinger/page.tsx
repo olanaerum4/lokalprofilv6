@@ -7,7 +7,6 @@ const VARS_HELP = [
   { key: '{navn}', desc: 'Kundens navn' },
   { key: '{bedrift}', desc: 'Bedriftsnavn' },
   { key: '{tid}', desc: 'Tidspunkt for timen' },
-  { key: '{avbestill}', desc: 'Avbestillingslenke (kun 24t)' },
   { key: '{google}', desc: 'Google-anmeldelseslenke (kun etter time)' },
 ]
 

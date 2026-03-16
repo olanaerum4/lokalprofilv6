@@ -22,7 +22,7 @@ const tutorials = [
     title: 'Slik fungerer SMS-flyten',
     desc: 'Hva kunden mottar og når.',
     steps: [
-      '24 timer før timen: Påminnelse med avbestillingslenke',
+      '24 timer før timen: Påminnelse sendes automatisk',
       '2 timer før timen: Siste påminnelse',
       '1 time etter timen: Melding med lenke til Google-anmeldelse',
       'Kunden klikker lenken og legger igjen en anmeldelse direkte på Google',

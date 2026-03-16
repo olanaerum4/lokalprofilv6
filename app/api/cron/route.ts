@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { adminClient } from '@/lib/supabase-server'
-import { sendSMS, buildReminder24h, buildReminder2h, buildAfterAppointment, fmtTime, cancelUrl } from '@/lib/sms'
+import { sendSMS, buildReminder24h, buildReminder2h, buildAfterAppointment, fmtTime } from '@/lib/sms'
 import { trackSmsUsage } from '@/lib/sms-tracker'
 
 export async function GET(req: Request) {
@@ -27,7 +27,7 @@ export async function GET(req: Request) {
 
     for (const c of r24 ?? []) {
       const biz = c.businesses as any
-      const msg = buildReminder24h(biz.sms_reminder_24h, c.name, biz.name, fmtTime(c.appointment_time), cancelUrl(c.cancel_token))
+      const msg = buildReminder24h(biz.sms_reminder_24h, c.name, biz.name, fmtTime(c.appointment_time))
       const ok = await sendAndTrack(biz.id, c.phone, msg)
       if (ok) { await sb.from('customers').update({ reminded_24h: true }).eq('id', c.id); sent++ }
       else errors++
