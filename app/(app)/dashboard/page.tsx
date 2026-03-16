@@ -26,30 +26,30 @@ export default async function Dashboard() {
   const [
     { data: todayC },
     { count: totalC },
-    { data: allFeedback },
-    { data: recentFeedback },
     { count: cancelledCount },
     { count: noShowCount },
+    { count: reviewsSentCount },
+    { count: upcomingWeekCount },
   ] = await Promise.all([
     sb.from('customers').select('*').eq('business_id', user.id)
       .gte('appointment_time', todayStart.toISOString())
       .lte('appointment_time', todayEnd.toISOString())
       .order('appointment_time'),
     sb.from('customers').select('*', { count: 'exact', head: true }).eq('business_id', user.id),
-    sb.from('feedback').select('rating').eq('business_id', user.id).gte('created_at', monthAgo.toISOString()),
-    sb.from('feedback').select('*, customers(name)').eq('business_id', user.id)
-      .order('created_at', { ascending: false }).limit(4),
     sb.from('customers').select('*', { count: 'exact', head: true }).eq('business_id', user.id).eq('cancelled', true),
     sb.from('customers').select('*', { count: 'exact', head: true }).eq('business_id', user.id).eq('no_show', true),
+    sb.from('customers').select('*', { count: 'exact', head: true }).eq('business_id', user.id).eq('review_requested', true),
+    sb.from('customers').select('*', { count: 'exact', head: true }).eq('business_id', user.id)
+      .gte('appointment_time', now.toISOString())
+      .lte('appointment_time', new Date(now.getTime() + 7 * 86400000).toISOString())
+      .eq('cancelled', false),
   ])
 
-  const avg = allFeedback?.length
-    ? (allFeedback.reduce((s, f) => s + f.rating, 0) / allFeedback.length).toFixed(1)
-    : null
-  const positive = allFeedback?.filter(f => f.rating >= 4).length ?? 0
-  const satisfactionPct = allFeedback?.length ? Math.round((positive / allFeedback.length) * 100) : null
   const upcoming = todayC?.filter(c => new Date(c.appointment_time) >= now && !c.cancelled) ?? []
   const past = todayC?.filter(c => new Date(c.appointment_time) < now) ?? []
+  // No-show rate
+  const totalPast = (totalC ?? 0) - (upcomingWeekCount ?? 0)
+  const noShowRate = totalPast > 0 ? Math.round(((noShowCount ?? 0) / totalPast) * 100) : 0
 
   // SMS usage
   const smsUsed = biz.sms_count_month ?? 0
@@ -108,7 +108,7 @@ export default async function Dashboard() {
         {[
           { label: 'Timer i dag', value: todayC?.filter(c => !c.cancelled).length ?? 0, icon: '📅' },
           { label: 'Totale kunder', value: totalC ?? 0, icon: '👥' },
-          { label: avg ? 'Snitt (30d)' : 'Snitt', value: avg ? `${avg} ★` : '–', icon: '⭐', highlight: avg !== null && parseFloat(avg) >= 4, sub: satisfactionPct !== null ? `${satisfactionPct}% fornøyde` : undefined },
+          { label: 'Google-SMS sendt', value: reviewsSentCount ?? 0, icon: '🌟', sub: 'anmeldelseslenker sendt totalt', highlight: false },
           { label: 'Avbestillinger', value: cancelledCount ?? 0, icon: '❌', sub: `${noShowCount ?? 0} no-shows` },
         ].map(s => (
           <div key={s.label} className={`card ${s.highlight ? 'border-green-200 bg-green-50' : ''}`}>
@@ -201,30 +201,15 @@ export default async function Dashboard() {
             {<p className="text-xs text-gray-300 mt-2">Nullstilles {nextBilling} (faktureringsdato)</p>}
           </div>
 
-          {/* Recent feedback */}
+          {/* Stats card */}
           <div className="card">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-gray-900">Tilbakemeldinger</h2>
-              <Link href="/tilbakemeldinger" className="text-xs text-green-600 font-semibold hover:underline">Se alle</Link>
+            <h2 className="font-semibold text-gray-900 mb-3">Denne uken</h2>
+            <div className="space-y-2.5">
+              <StatRow icon="📅" label="Kommende timer (7d)" value={upcomingWeekCount ?? 0} />
+              <StatRow icon="❌" label="Avbestillinger totalt" value={cancelledCount ?? 0} />
+              <StatRow icon="🚫" label="No-show rate" value={`${noShowRate}%`} />
+              <StatRow icon="🌟" label="Google-SMS sendt totalt" value={reviewsSentCount ?? 0} />
             </div>
-            {!recentFeedback?.length ? (
-              <p className="text-xs text-gray-400 text-center py-4">Ingen ennå</p>
-            ) : (
-              <div className="space-y-2.5">
-                {recentFeedback.map((f: any) => (
-                  <div key={f.id} className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0">
-                      {f.customers?.name?.charAt(0).toUpperCase() ?? '?'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-gray-800 truncate">{f.customers?.name}</p>
-                      <p className="text-xs text-amber-500">{'★'.repeat(f.rating)}<span className="text-gray-200">{'★'.repeat(5 - f.rating)}</span></p>
-                    </div>
-                    <span className="text-[10px] text-gray-300 flex-shrink-0">{fmt(f.created_at, { day:'numeric', month:'short' })}</span>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Quick links */}
@@ -277,4 +262,22 @@ export default async function Dashboard() {
       )}
     </div>
   )
+}
+
+function StatRow({ icon, label, value }: { icon: string; label: string; value: string | number }) {
+  return (
+    <div className="flex items-center justify-between py-0.5">
+      <div className="flex items-center gap-2">
+        <span className="text-sm">{icon}</span>
+        <span className="text-xs text-gray-500">{label}</span>
+      </div>
+      <span className="text-sm font-bold text-gray-900">{value}</span>
+    </div>
+  )
+}
+
+function QuickLink({ href, icon, label, external }: { href: string; icon: string; label: string; external?: boolean }) {
+  const cls = "flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm text-gray-600 hover:text-gray-900 font-medium"
+  if (external) return <a href={href} className={cls} target="_blank" rel="noopener"><span className="text-sm">{icon}</span>{label}</a>
+  return <Link href={href} className={cls}><span className="text-sm">{icon}</span>{label}</Link>
 }
