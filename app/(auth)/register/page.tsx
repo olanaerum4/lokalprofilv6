@@ -66,7 +66,13 @@ export default function Register() {
               {loading ? 'Oppretter konto...' : 'Start gratis prøveperiode →'}
             </button>
           </div>
-          <p className="text-center text-sm text-gray-500 mt-5">
+          <p className="text-center text-xs text-gray-400 mt-4 leading-relaxed">
+            Ved å registrere deg godtar du vår{' '}
+            <Link href="/personvern" className="text-gray-500 hover:underline">personvernerklæring</Link>
+            {' '}og{' '}
+            <Link href="/privacy" className="text-gray-500 hover:underline">privacy policy</Link>.
+          </p>
+          <p className="text-center text-sm text-gray-500 mt-3">
             Har du konto? <Link href="/login" className="text-green-600 font-semibold hover:underline">Logg inn</Link>
           </p>
         </div>
