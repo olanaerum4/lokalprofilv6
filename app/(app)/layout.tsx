@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { serverClient } from '@/lib/supabase-server'
 import Sidebar from '@/components/Sidebar'
+import SupportChat from '@/components/SupportChat'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const sb = await serverClient()
@@ -8,8 +9,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!user) redirect('/login')
 
   const { data: biz } = await sb.from('businesses').select('name, onboarding_done').eq('id', user.id).single()
-
-  // Redirect to onboarding if not done (but not if already on onboarding)
   if (!biz?.onboarding_done) redirect('/onboarding')
 
   return (
@@ -18,6 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <main className="flex-1 md:ml-56 pb-20 md:pb-0 min-w-0">
         {children}
       </main>
+      <SupportChat />
     </div>
   )
 }

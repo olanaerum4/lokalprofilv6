@@ -36,6 +36,12 @@ export default async function AdminDashboard({ searchParams }: { searchParams: {
     .select('*')
     .order('created_at', { ascending: false })
 
+  const { data: supportLogs } = await admin
+    .from('support_chats')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(50)
+
   const { data: customerCounts } = await admin.from('customers').select('business_id')
   const { data: allFeedback } = await admin.from('feedback').select('business_id, rating')
   const { data: allMessages } = await admin.from('messages').select('business_id, direction')
@@ -174,6 +180,35 @@ export default async function AdminDashboard({ searchParams }: { searchParams: {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Support chat logs */}
+      <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden mt-6 mb-6">
+        <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+          <h2 className="font-semibold">Supportspørsmål</h2>
+          <span className="text-xs text-gray-500 bg-gray-800 px-3 py-1 rounded-full">{supportLogs?.length ?? 0} totalt</span>
+        </div>
+        {!supportLogs?.length ? (
+          <div className="text-center py-10 text-gray-600 text-sm">Ingen spørsmål ennå</div>
+        ) : (
+          <div className="divide-y divide-gray-800">
+            {supportLogs.map(log => (
+              <div key={log.id} className="px-6 py-4">
+                <div className="flex items-start justify-between gap-4 mb-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${log.confident ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                      {log.confident ? 'Sikker' : 'Usikker'}
+                    </span>
+                    {log.user_email && <span className="text-xs text-blue-400">{log.user_email}</span>}
+                    <span className="text-xs text-gray-600">{new Date(log.created_at).toLocaleString('nb-NO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                </div>
+                <p className="text-sm font-semibold text-white mb-1">❓ {log.question}</p>
+                <p className="text-xs text-gray-400 leading-relaxed line-clamp-3">{log.answer}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Revenue breakdown */}

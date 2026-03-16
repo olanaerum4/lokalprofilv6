@@ -90,3 +90,17 @@ alter table businesses
 alter table businesses
   add column if not exists sms_count_month int default 0,
   add column if not exists sms_period_start date default current_date;
+
+-- Support chat logs
+create table if not exists support_chats (
+  id uuid primary key default uuid_generate_v4(),
+  business_id uuid references businesses(id) on delete set null,
+  user_email text,
+  question text not null,
+  answer text not null,
+  confident boolean default true,
+  created_at timestamptz default now()
+);
+alter table support_chats enable row level security;
+create policy "support_admin_only" on support_chats for all using (true);
+create index if not exists support_chats_business_id_idx on support_chats(business_id);
