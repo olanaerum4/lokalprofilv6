@@ -24,10 +24,13 @@ export default function Login() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-4">
-            <div className="w-9 h-9 bg-green-600 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
-            </div>
-            <span className="text-xl font-bold text-gray-900">LokalProfil</span>
+            <svg width="36" height="36" viewBox="0 0 64 64" fill="none">
+              <defs><linearGradient id="lg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0%" stopColor="#22c55e"/><stop offset="100%" stopColor="#16a34a"/></linearGradient></defs>
+              <path d="M10 6H36C44.837 6 52 13.163 52 22C52 30.837 44.837 38 36 38H22L10 52V38C6 38 6 35 6 32V12C6 8.686 8.686 6 12 6H10Z" stroke="url(#lg)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              <path d="M16 18L28 26L40 18" stroke="url(#lg)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M16 18H40V32H16V18Z" stroke="url(#lg)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            </svg>
+            <span className="text-xl font-bold text-gray-900" style={{letterSpacing: '-0.02em'}}>LokalProfil</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Logg inn</h1>
           <p className="text-gray-500 text-sm mt-1">Velkommen tilbake</p>

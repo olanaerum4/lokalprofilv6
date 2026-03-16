@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { LogoIcon } from './Logo'
 import { usePathname, useRouter } from 'next/navigation'
 import { browserClient } from '@/lib/supabase'
 
@@ -28,9 +29,7 @@ export default function Sidebar({ bizName }: { bizName: string }) {
       <aside className="hidden md:flex fixed left-0 top-0 h-full w-56 bg-white border-r border-gray-100 flex-col z-10">
         <div className="px-5 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
-            </div>
+            <LogoIcon size={32} />
             <div className="min-w-0">
               <div className="text-sm font-bold text-gray-900 leading-tight">LokalProfil</div>
               <div className="text-xs text-gray-400 truncate leading-tight">{bizName}</div>
