@@ -55,7 +55,9 @@ export default function Personvern() {
 
           <section>
             <h2 className="text-xl font-bold text-gray-900 mb-3">4. Rettslig grunnlag</h2>
-            <p>Behandling av opplysninger om bedriftens egne kunder skjer på grunnlag av <strong className="text-gray-800">berettiget interesse</strong> (GDPR art. 6(1)(f)) – å sende relevante påminnelser og innhente tilbakemeldinger. Bedriften som bruker LokalProfil er behandlingsansvarlig for sine kunders data. LokalProfil opptrer som databehandler.</p>
+            <p>All kommunikasjon via LokalProfil er <strong className="text-gray-800">tjenestekommunikasjon</strong>, ikke markedsføring. SMS-påminnelser sendes kun til kunder som allerede har en avtale med bedriften – dette er informasjon kunden forventer å motta.</p>
+            <p className="mt-3">Rettslig grunnlag er <strong className="text-gray-800">berettiget interesse</strong> (GDPR art. 6(1)(f)). Å minne en kunde på en time de selv har bestilt er en naturlig og forventet del av tjenesteleveransen, og er ikke å anse som uoppfordret markedsføring etter markedsføringsloven.</p>
+            <p className="mt-3">Bedriften som bruker LokalProfil er behandlingsansvarlig for sine kunders data. LokalProfil opptrer som databehandler og behandler kun data på instruks fra bedriften.</p>
           </section>
 
           <section>
