@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { serverClient } from '@/lib/supabase-server'
-import { sendSMS } from '@/lib/sms'
+import { sendSMS, toSenderName } from '@/lib/sms'
 import { trackSmsUsage } from '@/lib/sms-tracker'
 
 export async function POST(req: Request) {
@@ -11,9 +11,12 @@ export async function POST(req: Request) {
   const { to, message } = await req.json()
   if (!to || !message) return NextResponse.json({ error: 'Mangler to eller message' }, { status: 400 })
 
-  const result = await sendSMS(to, message)
+  // Use business name as sender
+  const { data: biz } = await sb.from('businesses').select('name').eq('id', user.id).single()
+  const from = toSenderName(biz?.name)
+
+  const result = await sendSMS(to, message, from)
   if (result.ok) {
-    // Track ALL outgoing SMS including test SMS
     await trackSmsUsage(user.id)
     return NextResponse.json({ ok: true })
   }

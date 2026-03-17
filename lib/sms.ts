@@ -1,7 +1,20 @@
-export async function sendSMS(to: string, message: string): Promise<{ ok: boolean; error?: string }> {
+// Sanitize business name to valid 46elks alphanumeric sender (3-11 chars, letters/digits only)
+export function toSenderName(name: string | null | undefined): string {
+  if (!name) return 'LokalProfil'
+  const cleaned = name
+    .replace(/[æÆ]/g, 'ae')
+    .replace(/[øØ]/g, 'o')
+    .replace(/[åÅ]/g, 'a')
+    .replace(/[^a-zA-Z0-9 ]/g, '')  // remove special chars
+    .replace(/\s+/g, '')             // remove spaces
+    .substring(0, 11)                // max 11 chars
+  return cleaned.length >= 3 ? cleaned : 'LokalProfil'
+}
+
+export async function sendSMS(to: string, message: string, from?: string): Promise<{ ok: boolean; error?: string }> {
   const u = process.env.ELKS_USERNAME!
   const p = process.env.ELKS_PASSWORD!
-  const from = process.env.ELKS_FROM_NUMBER || 'LokalProfil'
+  const sender = from ?? process.env.ELKS_FROM_NUMBER ?? 'LokalProfil'
 
   if (!u || !p) return { ok: false, error: 'ELKS_USERNAME eller ELKS_PASSWORD mangler' }
 
@@ -12,7 +25,7 @@ export async function sendSMS(to: string, message: string): Promise<{ ok: boolea
         Authorization: 'Basic ' + Buffer.from(`${u}:${p}`).toString('base64'),
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({ from, to, message }),
+      body: new URLSearchParams({ from: sender, to, message }),
     })
     if (!r.ok) {
       const text = await r.text()
@@ -53,4 +66,3 @@ export function buildAfterAppointment(custom: string | null, name: string, biz: 
 export function fmtTime(ts: string) {
   return new Date(ts).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })
 }
-
