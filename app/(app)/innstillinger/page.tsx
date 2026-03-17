@@ -55,10 +55,19 @@ export default function Innstillinger() {
     await sb.from('businesses').upsert({
       id: userId, name, phone,
       google_review_link: link || null,
+      google_review_short: null, // reset so cron re-shortens
       sms_reminder_24h: sms24h || null,
       sms_reminder_2h: sms2h || null,
       sms_after_appointment: smsAfter || null,
     })
+    // Auto-shorten Google review link via bitly
+    if (link) {
+      fetch('/api/shorten-review-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: link }),
+      }).catch(() => {}) // fire and forget
+    }
     setSaved(true); setTimeout(() => setSaved(false), 3000)
     setSaving(false)
   }

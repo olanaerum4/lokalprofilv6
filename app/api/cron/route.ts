@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { adminClient } from '@/lib/supabase-server'
 import { sendSMS, toSenderName, buildReminder24h, buildReminder2h, buildAfterAppointment, fmtTime } from '@/lib/sms'
 import { trackSmsUsage } from '@/lib/sms-tracker'
+import { shortenUrl } from '@/lib/bitly'
 
 export async function GET(req: Request) {
   const auth = req.headers.get('authorization')
@@ -17,6 +18,23 @@ export async function GET(req: Request) {
     const { ok } = await sendSMS(phone, msg, from)
     if (ok) await trackSmsUsage(bizId)
     return ok
+  }
+
+  // Get or create shortened link for a business
+  async function getShortLink(biz: any): Promise<string | null> {
+    if (!biz.google_review_link) return null
+
+    // Use cached short link if exists
+    if (biz.google_review_short) return biz.google_review_short
+
+    // Shorten and cache
+    const short = await shortenUrl(biz.google_review_link)
+    if (short !== biz.google_review_link) {
+      await sb.from('businesses')
+        .update({ google_review_short: short })
+        .eq('id', biz.id)
+    }
+    return short
   }
 
   try {
@@ -50,16 +68,17 @@ export async function GET(req: Request) {
       else errors++
     }
 
-    // Post-appointment
+    // Post-appointment – use short link
     const { data: rr } = await sb.from('customers')
-      .select('*, businesses(id, name, google_review_link, sms_after_appointment)')
+      .select('*, businesses(id, name, google_review_link, google_review_short, sms_after_appointment)')
       .eq('review_requested', false).eq('cancelled', false).eq('no_show', false)
       .gte('appointment_time', new Date(now.getTime() - 1.5 * 3600000).toISOString())
       .lte('appointment_time', new Date(now.getTime() - 0.5 * 3600000).toISOString())
 
     for (const c of rr ?? []) {
       const biz = c.businesses as any
-      const msg = buildAfterAppointment(biz.sms_after_appointment, c.name, biz.name, biz.google_review_link)
+      const reviewLink = await getShortLink(biz)
+      const msg = buildAfterAppointment(biz.sms_after_appointment, c.name, biz.name, reviewLink)
       const ok = await sendAndTrack(biz.id, biz.name, c.phone, msg)
       if (ok) { await sb.from('customers').update({ review_requested: true }).eq('id', c.id); sent++ }
       else errors++

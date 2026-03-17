@@ -104,3 +104,6 @@ create table if not exists support_chats (
 alter table support_chats enable row level security;
 create policy "support_admin_only" on support_chats for all using (true);
 create index if not exists support_chats_business_id_idx on support_chats(business_id);
+
+-- Cache shortened Google review links
+alter table businesses add column if not exists google_review_short text;
