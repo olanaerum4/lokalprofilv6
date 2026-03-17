@@ -28,6 +28,7 @@ export async function middleware(req: NextRequest) {
     path.startsWith('/nytt-passord') ||
     path.startsWith('/personvern') ||
     path.startsWith('/privacy') ||
+    path.startsWith('/vilkar') ||
     path === '/'
 
   if (!user && !isAuthPage && !isPublic) return NextResponse.redirect(new URL('/login', req.url))

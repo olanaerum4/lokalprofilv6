@@ -383,6 +383,7 @@ export default function Landing() {
             <a href="mailto:kontakt@lokalprofil.no" className="hover:text-gray-700 transition-colors">kontakt@lokalprofil.no</a>
             <Link href="/personvern" className="hover:text-gray-700 transition-colors">Personvern</Link>
             <Link href="/privacy" className="hover:text-gray-700 transition-colors">Privacy Policy</Link>
+            <Link href="/vilkar" className="hover:text-gray-700 transition-colors">Vilkår</Link>
             <Link href="/login" className="hover:text-gray-700 transition-colors">Logg inn</Link>
           </div>
           <p className="text-xs text-gray-400">© 2026 LokalProfil</p>
