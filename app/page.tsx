@@ -271,25 +271,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section className="py-20 px-5">
-        <div className="max-w-4xl mx-auto">
-          <div className="grid md:grid-cols-3 gap-5">
-            {[
-              { quote: 'Kundene mine husker timene sine mye bedre nå. Har nesten eliminert no-shows.', name: 'Frisørsalong, Trondheim' },
-              { quote: 'Fikk 12 nye Google-anmeldelser den første måneden. Utrolig enkelt å sette opp.', name: 'Massasjeterapeut, Oslo' },
-              { quote: 'Sparer meg for 30 minutter med manuell oppfølging hver eneste dag.', name: 'Personlig trener, Bergen' },
-            ].map(t => (
-              <div key={t.name} className="bg-gray-50 rounded-2xl p-6 border border-gray-100 feature-card">
-                <div className="text-amber-400 text-sm mb-3">★★★★★</div>
-                <p className="text-gray-700 text-sm leading-relaxed mb-4">"{t.quote}"</p>
-                <p className="text-xs text-gray-400 font-semibold">{t.name}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* PRICING */}
       <section id="pris" className="py-24 px-5 bg-gray-50">
         <div className="max-w-md mx-auto text-center">
